@@ -1,9 +1,12 @@
 import express from "express";
+
 import {
   triageInputSchema,
   triageOutputSchema,
   TRIAGE_STUB_RESPONSE,
 } from "../llm/schema.js";
+
+import { triageWithLLM } from "../llm/service.js";
 
 const router = express.Router();
 
@@ -21,7 +24,9 @@ router.post("/triage", async (req, res) => {
   }
 
   if (process.env.LLM_STUB === "1") {
-    const stubResult = triageOutputSchema.safeParse(TRIAGE_STUB_RESPONSE);
+    const stubResult = triageOutputSchema.safeParse(
+      TRIAGE_STUB_RESPONSE
+    );
 
     if (!stubResult.success) {
       return res.status(500).json({
@@ -32,9 +37,21 @@ router.post("/triage", async (req, res) => {
     return res.status(200).json(stubResult.data);
   }
 
-  return res.status(503).json({
-    error: "LLM integration is not enabled yet",
-  });
+  try {
+    const rawModelOutput = await triageWithLLM(
+      inputResult.data.text
+    );
+
+    return res.status(200).json({
+      raw: rawModelOutput,
+    });
+  } catch (error) {
+    console.error("LLM request failed:", error?.message ?? error);
+
+    return res.status(502).json({
+      error: "LLM request failed",
+    });
+  }
 });
 
 export default router;
