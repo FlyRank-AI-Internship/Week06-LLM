@@ -23,6 +23,13 @@ router.post("/triage", async (req, res) => {
     });
   }
 
+  if (process.env.LLM_ENABLED === "false") {
+    return res.status(503).json({
+      error: "AI triage is temporarily unavailable",
+      message: "The LLM feature is currently disabled.",
+    });
+  }
+
   if (process.env.LLM_STUB === "1") {
     const stubResult = triageOutputSchema.safeParse(
       TRIAGE_STUB_RESPONSE
@@ -54,6 +61,18 @@ router.post("/triage", async (req, res) => {
         error: "Unable to produce a valid triage result",
         message:
           "The AI response failed schema validation after one repair attempt.",
+      });
+    }
+
+    if (
+      error?.name === "APIConnectionTimeoutError" ||
+      error?.code === "ETIMEDOUT" ||
+      error?.code === "ECONNABORTED"
+    ) {
+      return res.status(504).json({
+        error: "LLM request timed out",
+        message:
+          "The AI provider did not respond within the allowed time.",
       });
     }
 
