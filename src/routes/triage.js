@@ -6,7 +6,7 @@ import {
   TRIAGE_STUB_RESPONSE,
 } from "../llm/schema.js";
 
-import { triageWithLLM } from "../llm/service.js";
+import { processTriage } from "../llm/processor.js";
 
 const router = express.Router();
 
@@ -38,15 +38,24 @@ router.post("/triage", async (req, res) => {
   }
 
   try {
-    const rawModelOutput = await triageWithLLM(
+    const result = await processTriage(
       inputResult.data.text
     );
 
-    return res.status(200).json({
-      raw: rawModelOutput,
-    });
+    return res.status(200).json(result.data);
   } catch (error) {
-    console.error("LLM request failed:", error?.message ?? error);
+    console.error(
+      "Triage processing failed:",
+      error?.message ?? error
+    );
+
+    if (error.code === "INVALID_LLM_OUTPUT") {
+      return res.status(422).json({
+        error: "Unable to produce a valid triage result",
+        message:
+          "The AI response failed schema validation after one repair attempt.",
+      });
+    }
 
     return res.status(502).json({
       error: "LLM request failed",

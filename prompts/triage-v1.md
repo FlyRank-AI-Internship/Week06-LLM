@@ -11,7 +11,7 @@ Return exactly one JSON object with this shape:
 
 Rules:
 
-- category must be exactly one of: billing, bug, feature, other
+- category must always be exactly "complaint"
 - urgency must be exactly one of: low, normal, high
 - confidence must be a number from 0.0 to 1.0
 - reason must be one short sentence
