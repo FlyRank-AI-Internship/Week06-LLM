@@ -10,8 +10,13 @@ try {
     model: process.env.LLM_MODEL,
     messages: [
       {
+        role: "system",
+        content:
+          "This is a simple API connectivity test. Reply with exactly one lowercase word: ready. Do not add any explanation, label, punctuation, or safety classification.",
+      },
+      {
         role: "user",
-        content: "Reply with exactly the word: ready",
+        content: "Reply with exactly: ready",
       },
     ],
     temperature: 0,
@@ -20,10 +25,6 @@ try {
   console.log(response.choices[0].message.content);
 } catch (error) {
   console.error("LLM connection failed:");
-
-  console.error(
-    error?.message ?? error
-  );
-
+  console.error(error?.message ?? error);
   process.exit(1);
 }
