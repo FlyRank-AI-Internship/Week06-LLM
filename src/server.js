@@ -1,5 +1,7 @@
 import express from "express";
-import triageRouter from "./routes/triage.js";
+
+import jobsRouter from "./routes/jobs.js";
+import { startWorker } from "./jobs/worker.js";
 
 const app = express();
 
@@ -11,10 +13,29 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.use("/api", triageRouter);
+app.use("/api", jobsRouter);
+
+// Invalid JSON handler
+app.use((err, req, res, next) => {
+  if (
+    err instanceof SyntaxError &&
+    err.status === 400 &&
+    "body" in err
+  ) {
+    return res.status(400).json({
+      error: "Invalid JSON",
+      field: "body",
+      message: "Request body must contain valid JSON.",
+    });
+  }
+
+  next(err);
+});
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT}`);
+
+  startWorker();
 });
